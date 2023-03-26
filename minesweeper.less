@@ -1,0 +1,334 @@
+﻿#minesweeper
+{
+	--vmin: calc(100vmin);
+	--vmax: 100vmax;
+	--dim: calc((100vmin - 2*var(--border-size)) / var(--min));
+	--gap: 1px;
+	--rise: calc(0.05*var(--dim));
+	--dark: #aaa;
+	--dark-hi: #b4b4b4;
+	--mid: #ccc;
+	--mid-hi: #d4d4d4;
+	--light: #eee;
+	--light-hi: #f4f4f4;
+	--moat: #ccf;
+	--moat-hi: #ddf;
+	--border-size: 4px;
+	--number-size: calc(0.5*var(--dim));
+	--flag-size: calc(0.4*var(--dim));
+	--bomb-size: calc(0.6*(var(--dim) - var(--gap)));
+
+	overflow: hidden;
+
+	.wiggle()
+	{
+		animation-name: wiggle;
+		animation-delay: calc(-1s * var(--rnd));
+		animation-duration: 0.5s;
+		animation-iteration-count: infinite;
+		animation-timing-function: ease-in-out;
+	}
+
+	@keyframes wiggle 
+	{
+		 0% { transform: translate( 50%,50%) rotate(  0.5deg) translate(-50%,-50%); }
+		25% { transform: translate(-50%,50%) rotate( -0.5deg) translate( 50%,-50%); }
+		50% { transform: translate( 50%,50%) rotate(  1.0deg) translate(-50%,-50%); }
+		75% { transform: translate(-50%,50%) rotate( -0.3deg) translate( 50%,-50%); }
+	   100% { transform: translate( 50%,50%) rotate(  0.5deg) translate(-50%,-50%); }
+	}
+
+	.notice()
+	{
+		animation-name: notice;
+		animation-delay: 0;
+		animation-duration: 0.3s;
+		animation-iteration-count: 1;
+		animation-timing-function: ease-in-out;
+	}
+
+	@keyframes notice
+	{
+		  0% { transform: scale(1); }
+		 25% { transform: scale(1.2); }
+		 50% { transform: scale(1.1); }
+		 75% { transform: scale(1); }
+		100% { transform: scale(1); }
+	}
+
+	.boom()
+	{
+		animation-name: boom;
+		animation-delay: 0;
+		animation-duration: 0.3s;
+		animation-iteration-count: 1;
+		animation-timing-function: ease-in;
+		opacity: 0;
+	}
+
+	@keyframes boom
+	{
+		  0% { transform: rotate(0deg) scale(1); opacity: 0; }
+		 10% { opacity: 1; }
+		100% { transform: rotate(-7deg) scale(2); opacity: 0; }
+	}
+
+	display: block;
+	position: absolute;
+	top: calc(50% - 0.5*var(--gap));
+	left: calc(50% - 0.5*var(--gap));
+	width: calc(var(--width) * var(--dim) + var(--gap));
+	height: calc(var(--height) * var(--dim) + var(--gap));
+	transform: translate(-50%,-50%);
+	background: var(--dark);
+	body.won &, body.lost &
+	{
+		> tile.bomb:after
+		{
+			.wiggle();
+			text-shadow: 0 0 12px #f00;
+			color: #800;
+		}
+		> tile.flag:after, 
+		> tile.flag.bomb:after
+		{
+			.wiggle();
+			text-shadow: 0 0 12px #0f0;
+			color: #080;
+		}
+	}
+	user-select: none;
+	> tile
+	{
+		display: block;
+		position: absolute;
+		top: calc(var(--y) * var(--dim) + var(--gap));
+		left: calc(var(--x) * var(--dim) + var(--gap));
+		width: calc(var(--w) * var(--dim) - var(--gap));
+		height: calc(var(--h) * var(--dim) - var(--gap));
+		&:before, &:after
+		{
+			display: block;
+			content: "";
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			text-align: center;
+			font-size: var(--number-size);
+			font-family: sans-serif;
+			font-weight: bold;
+			line-height: calc(var(--dim) - 2*var(--rise));
+			text-align: center;
+		}
+		background: var(--mid);
+		&.moat
+		{
+			background: var(--moat);
+		}
+		&:before
+		{
+			border: var(--rise) solid transparent;
+		}
+		&.hidden:before
+		{
+			animation: none;
+			border: var(--rise) outset var(--light);				
+		}
+		&:not(.hidden):before
+		{
+			.notice();
+		}
+		&.shown, body.lost &
+		{
+			&.bomb:after
+			{
+				content: "💣";
+				color: #000;
+				font-size: var(--bomb-size);
+				line-height: calc(var(--dim) - var(--gap));
+			}
+			&.neighbor-1:before
+			{
+				content: "1";
+				color: blue;
+			}
+			&.neighbor-2:before
+			{
+				content: "2";
+				color: green;
+			}
+			&.neighbor-3:before
+			{
+				content: "3";
+				color: red;
+			}
+			&.neighbor-4:before
+			{
+				content: "4";
+				color: purple;
+			}
+			&.neighbor-5:before
+			{
+				content: "5";
+				color: black;
+			}
+			&.neighbor-6:before
+			{
+				content: "6";
+				color: maroon;
+			}
+			&.neighbor-7:before
+			{
+				content: "7";
+				color: gray;
+			}
+			&.neighbor-8:before
+			{
+				content: "8";
+				color: turquoise;
+			}
+		}
+		&.shown.bomb:before
+		{
+			content: "💥";
+			font-size: calc(var(--dim)*0.7);
+			z-index: 2;
+			transform: rotate(-7deg);
+			.boom();
+		}
+		body.lost &.hidden:before
+		{
+			opacity: 0.5;
+		}
+		&.hidden
+		{
+			&.flag:after
+			{
+				// content: "⚑⚐🏁🏳🚩🏴⛿";
+				content: "🏴";
+				color: #000;
+				font-size: var(--flag-size);
+				line-height: var(--dim);
+			}
+		}
+	}
+	&.active > tile
+	{
+		&:hover
+		{
+			background: var(--mid-hi);
+		}
+		&:active, 
+		&.active
+		{
+			background: var(--mid);
+		}
+		&.moat:hover
+		{
+			background: var(--moat-hi);
+		}
+		&.moat:active, 
+		&.moat.active
+		{
+			background: var(--moat);
+		}
+		&.hidden:hover
+		{
+			border-color: var(--light-hi);
+		}
+		&.hidden:active:before,
+		&.hidden.active:before
+		{
+			border: var(--rise) inset var(--light);
+		}
+	}
+}
+
+body
+{
+	background: #000;
+	&.won
+	{
+		background: green;
+	}
+	&.lost
+	{
+		background: red;
+	}
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+#ui
+{
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+	width: 16em;
+	padding: 1em;
+	z-index: 1000;
+	background: #eee;
+	border: 0.25em solid #888;
+	text-align: center;
+	transition: 0.3s ease-out transform;
+	&.hidden
+	{
+		transform: translate(-50%,150vh);
+	}
+	> *
+	{
+		margin: 0.5em 0;
+	}
+	> *:first-child
+	{
+		margin-top: 0;
+	}
+	> *:last-child
+	{
+		margin-bottom: 0;
+	}
+	label
+	{
+		display: flex;
+		> *:not(:first-child)
+		{
+			margin: 0.5em 0 0.5em 0.5em;
+			flex-grow: 1;
+		}
+	}
+	select,input,button
+	{
+		font-size: 100%;
+	}
+	button
+	{
+		line-height: 1.5;
+		padding: 0 1em;
+	}
+}
+
+.notify
+{
+	position: fixed;
+	left: 50%;
+	top: 0;
+	transform: translate(-50%,-100%);
+	animation: 2s ease-in-out pop;
+	width: 16em;
+	padding: 1em;
+	z-index: 1000;
+	background: #eee;
+	border: 0.25em solid #888;
+	text-align: center;
+
+	@keyframes pop
+	{
+		0% { transform: translate(-50%,-100%); }
+		10% { transform: translate(-50%,-100%) translate(0,100%) translate(0,1em);  }
+		90% { transform: translate(-50%,-100%) translate(0,100%) translate(0,1em);  }
+		0% { transform: translate(-50%,-100%); }
+	}
+}

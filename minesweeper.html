@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>minesweeper</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="minesweeper.css" />
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script type="text/javascript" src="lib.js"></script>
+	<script type="text/javascript" src="minesweeper.js"></script>
+</head>
+<body>
+	<div id="ui" class="hidden">
+		<p>Minesweeper</p>
+		<label>
+			<p>Size</p>
+			<select id="size">
+				<option value="125">Small (125 tiles)</option>
+				<option selected="selected" value="150">Medium (150 tiles)</option>
+				<option value="200">Large (200 tiles)</option>
+				<option value="300">Huge (300 tiles)</option>
+				<option value="500">Gargantuan (500 tiles)</option>
+			</select>
+		</label>
+		<label>
+			<p>Moat</p>
+			<select id="moat">
+				<option value="0">None</option>
+				<option selected="selected" value="1">Tiny (1 tile)</option>
+				<option value="2">Full (2 tiles)</option>
+			</select>
+		</label>
+		<label>
+			<p>Difficulty</p>
+			<select id="density">
+				<option value="0.1">Easy (14%)</option>
+				<option selected="selected" value="0.15">Medium (15%)</option>
+				<option value="0.2">Hard (17%)</option>
+				<option value="0.25">Annoying (20%)</option>
+				<option value="0.3">Insane (24%)</option>
+			</select>
+		</label>
+		<button type="button" id="start">
+			Start!
+		</button>
+	</div>
+	<div id="minesweeper">
+		<p>Loading...</p>
+	</div>
+</body>
+</html>
