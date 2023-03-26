@@ -45,12 +45,12 @@
 			values:
 			[
 				[0.10, "Easy", "easy"],
-				[0.15, "Medium", "medium"],
-				[0.20, "Hard", "hard"],
-				[0.25, "Annoying", "annoying"],
-				[0.30, "Insane", "insane"],
+				[0.13, "Normal", "normal"],
+				[0.15, "Hard", "hard"],
+				[0.20, "Tricky", "tricky"],
+				[0.25, "Insane", "insane"],
 			],
-			default: 0.15,
+			default: 0.13,
 		},
 	};
 	Settings.size.options = Object.fromEntries(Settings.size.values.map(([v,l]) => [`${v}`,`${l} (${v} tiles)`]));
@@ -250,7 +250,7 @@
 				{
 					localStorage[bestKey] = JSON.stringify(duration);
 					$("#best #time").text(`${Math.round(10*duration)/10} s`);
-					$("#best #settings").text(`${Settings.size.reverse[this.NumTiles] ?? `${this.NumTiles} tiles`}, ${Settings.moat.reverse[this.MoatSize] ?? `${this.MoatSize} tile moat`}, ${Settings.size.reverse[this.Density] ?? `${Math.round(100*this.Density)}% difficulty`}`);
+					$("#best #settings").text(`${Settings.size.reverse[this.NumTiles] ?? `${this.NumTiles} tiles`}, ${Settings.moat.reverse[this.MoatSize] ?? `${this.MoatSize} tile moat`}, ${Settings.density.reverse[this.Density] ?? `${Math.round(100*this.Density)}% difficulty`}`);
 					$("#best").removeClass("hidden");
 					$("#best button").on("click", OnGreat);
 					await WaitForGo();
