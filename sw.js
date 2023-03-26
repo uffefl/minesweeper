@@ -4,12 +4,12 @@ self.addEventListener('install', (e) =>
 	(
 		caches.open('minesweeper-store').then((cache) => cache.addAll
 		([
-			'/',
-			'/index.html',
-			'/minesweeper.png',
-			'/minesweeper.css',
-			'/lib.js',
-			'/minesweeper.js',
+			'/minesweeper/',
+			'/minesweeper/index.html',
+			'/minesweeper/minesweeper.png',
+			'/minesweeper/minesweeper.css',
+			'/minesweeper/lib.js',
+			'/minesweeper/minesweeper.js',
 		])),
 	);
 });

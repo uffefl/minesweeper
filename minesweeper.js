@@ -9,7 +9,7 @@
 	if ('serviceWorker' in navigator)
 	{
 		navigator.serviceWorker
-			.register('sw.js')
+			.register('/minesweeper/sw.js')
 			.then(() => { console.log('Service Worker Registered'); });
 	}
 
