@@ -13,6 +13,78 @@
 			.then(() => { console.log("Service Worker Registered"); });
 	}
 
+	const Settings =
+	{
+		size:
+		{
+			label: "Size",
+			values:
+			[
+				[125, "Small", "small"],
+				[150, "Medium", "medium"],
+				[200, "Large", "large"],
+				[300, "Huge", "huge"],
+				[500, "Gargantuan", "gargantuan"],
+			],
+			default: 150,
+		},
+		moat:
+		{
+			label: "Moat",
+			values:
+			[
+				[0, "None", "no moat"],
+				[1, "Tiny", "tiny moat"],
+				[2, "Full", "full moat"],
+			],
+			default: 0,
+		},
+		density:
+		{
+			label: "Difficulty",
+			values:
+			[
+				[0.10, "Easy", "easy"],
+				[0.15, "Medium", "medium"],
+				[0.20, "Hard", "hard"],
+				[0.25, "Annoying", "annoying"],
+				[0.30, "Insane", "insane"],
+			],
+			default: 0.15,
+		},
+	};
+	Settings.size.options = Object.fromEntries(Settings.size.values.map(([v,l]) => [`${v}`,`${l} (${v} tiles)`]));
+	Settings.moat.options = Object.fromEntries(Settings.moat.values.map(([v,l]) => [`${v}`,v===0?l:v===1?`${l} (1 tile)`:`${l} (${v} tiles)`]));
+	Settings.density.options = Object.fromEntries(Settings.density.values.map(([v,l]) => [`${v}`,`${l} (${Math.round(v*100)}%)`]));
+	Settings.size.reverse = Object.fromEntries(Settings.size.values.map(([v,_,l]) => [`${v}`,`${l} (${v} tiles)`]));
+	Settings.moat.reverse = Object.fromEntries(Settings.moat.values.map(([v,_,l]) => [`${v}`,v===0?l:v===1?`${l} (1 tile)`:`${l} (${v} tiles)`]));
+	Settings.density.reverse = Object.fromEntries(Settings.density.values.map(([v,_,l]) => [`${v}`,`${l} (${Math.round(v*100)}%)`]));
+	function Initialize()
+	{
+		let ui = $("body").make("div#ui").addClass("hidden");
+		ui.children().remove();
+		$("<p>").text("Minesweeper").appendTo(ui);
+		for (let [k,v] of Object.entries(Settings))
+		{
+			let label = $("<label>").appendTo(ui);
+			$("<p>").text(v.label).appendTo(label);
+			let select = $("<select>").attr("id",k).appendTo(label);
+			for (let [val,text] of Object.entries(v.options))
+			{
+				$("<option>").attr("value",val).text(text).appendTo(select);
+			}
+		}
+		$("<label><p>Personal best</p><p id=\"pb\"></p>").appendTo(ui);
+		$("<button>").attr("id","start").text("Start!").appendTo(ui);
+
+		let best = $("body").make("div#best").addClass("hidden");
+		best.children().remove();
+		$("<p><b>Personal best!</b></p>").appendTo(best);
+		$("<p id=\"time\">Infinity s</p>").appendTo(best);
+		$("<p id=\"settings\"></p>").appendTo(best);
+		$("<button id=\"ok\">Great!</button>").appendTo(best);
+	}
+
 	class MineSweeper
 	{
 		NumTiles;
@@ -47,6 +119,7 @@
 				e.preventDefault();
 				Reveal($(e.target));
 			}
+			let time0 = new Date();
 			root.off("click contextmenu touchend", "tile", OnFirstClick);
 			console.log("Update()","First click received...");
 			root.on("click contextmenu", "tile", OnClick)
@@ -159,6 +232,7 @@
 				}
 				CheckWin();
 			}
+			let time1 = new Date();
 			root.off("click contextmenu", "tile", OnClick);
 			root.off("touchstart", "tile", OnTouchStart);
 			root.off("touchend", "tile", OnTouchEnd);
@@ -166,7 +240,29 @@
 			root.off("touchmove", "tile", OnTouchMove);
 			root.removeClass("active");
 			$("body").toggleClass("won",!!won).toggleClass("lost",!!lost);
-			console.log("Update()","Game over.");
+			console.log("Update()",`Game over. Duration ${(time1-time0)/1000} s.`);
+			if (won)
+			{
+				let bestKey = `best ${this.NumTiles} ${this.MoatSize} ${this.Density}`
+				let duration = (time1-time0)/1000;
+				let best = localStorage[bestKey]===undefined ? Infinity : JSON.parse(localStorage[bestKey]);
+				if (duration<best)
+				{
+					localStorage[bestKey] = JSON.stringify(duration);
+					$("#best #time").text(`${Math.round(10*duration)/10} s`);
+					$("#best #settings").text(`${Settings.size.reverse[this.NumTiles] ?? `${this.NumTiles} tiles`}, ${Settings.moat.reverse[this.MoatSize] ?? `${this.MoatSize} tile moat`}, ${Settings.size.reverse[this.Density] ?? `${Math.round(100*this.Density)}% difficulty`}`);
+					$("#best").removeClass("hidden");
+					$("#best button").on("click", OnGreat);
+					await WaitForGo();
+					function OnGreat(e)
+					{
+						go = true;
+						e.preventDefault();
+					}
+					$("#best button").off("click", OnGreat);
+					$("#best").addClass("hidden");
+				}
+			}
 
 			function CheckWin()
 			{
@@ -247,16 +343,26 @@
 
 		}
 
+		OnResize()
+		{
+			let border = 4;
+			let root = $("#minesweeper");
+			let vw = $(window).width() - 2*border;
+			let vh = $(window).height() - 2*border;
+			let dim = Math.floor(Math.min(vw/this.Width, vh/this.Height));
+			root[0].style.setProperty("--dim", dim+"px");			
+		}
+
 		Start()
 		{
 			$("body").removeClass("won lost");
 			let border = 4;
 			let vw = $(window).width() - 2*border;
 			let vh = $(window).height() - 2*border;
-			if (Math.min(vw,vh)>700)
-			{
-				vw = vh = Math.min(vw,vh)*0.8;
-			}
+			// if (Math.min(vw,vh)>700)
+			// {
+			// 	vw = vh = Math.min(vw,vh)*0.8;
+			// }
 
 			let a = this.NumTiles + 4*this.MoatSize*this.MoatSize;
 			let b = 2*this.MoatSize*(vh + vw);
@@ -269,9 +375,10 @@
 			this.Width = Math.floor(vw/dim);
 			this.Height = Math.floor(vh/dim);
 
-			let notify = $("body").make("div.notify")
-				.text(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize)}`);
-			setTimeout(_ => notify.remove(), 2000);
+			// let notify = $("body").make("div.notify")
+			// 	.text(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize)}`);
+			// setTimeout(_ => notify.remove(), 2000);
+			console.log(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize)}`);
 
 			let root = $("#minesweeper");
 			root.children().remove();
@@ -334,6 +441,26 @@
 
 	$(document).on("click", "#ui button", _ => PlayGame());
 
+	$(document).on("change", "#ui", e =>
+	{
+		let input = e.target;
+		let id = $(input).attr("id");
+		let value = $(input).val();
+		localStorage[id] = value;
+		ShowPb();
+		console.log("change",id,value);
+	});
+
+	function ShowPb()
+	{
+		let size = $("#ui #size").val();
+		let moat = $("#ui #moat").val();
+		let density = $("#ui #density").val();
+		let bestKey = `best ${size} ${moat} ${density}`;
+		let best = localStorage[bestKey];
+		$("#ui #pb").text(best===undefined ?"" : `${Math.round(10*best)/10} s`);
+	}
+
 	async function PlayGame()
 	{
 		let ui = $("#ui");
@@ -344,14 +471,23 @@
 		// return;
 		let game = new MineSweeper(size,density,moat);
 		ui.addClass("hidden");
+		$(window).on("resize", OnResize);
 		await game.Update();
+		$(window).off("resize", OnResize);
 		ui.removeClass("hidden").find("button").focus();
+		ShowPb();
+		function OnResize() { return game.OnResize(); }
 	} 
 
 	async function OnLoad()
 	{
+		Initialize();
+		if (localStorage.size) $("#ui #size").val(localStorage.size);
+		if (localStorage.moat) $("#ui #moat").val(localStorage.moat);
+		if (localStorage.density) $("#ui #density").val(localStorage.density);
 		$("#minesweeper").children().remove();
 		$("#ui").removeClass("hidden").find("button").focus();
+		ShowPb();
 	}
 
 	$(OnLoad);

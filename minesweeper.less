@@ -261,7 +261,7 @@ body
 	font-size: 16px;
 }
 
-#ui
+#ui, #best
 {
 	position: fixed;
 	top: 50%;
@@ -293,10 +293,15 @@ body
 	label
 	{
 		display: flex;
-		> *:not(:first-child)
+		justify-content: space-between;
+		> *:not(:first-child):not(p)
 		{
 			margin: 0.5em 0 0.5em 0.5em;
 			flex-grow: 1;
+		}
+		&:has(>p:last-child:empty)
+		{
+			display: none !important;
 		}
 	}
 	select,input,button
@@ -307,6 +312,15 @@ body
 	{
 		line-height: 1.5;
 		padding: 0 1em;
+	}
+
+	p#time
+	{
+		font-size: xxx-large;
+	}
+	p#settings
+	{
+		font-size: x-small;
 	}
 }
 
