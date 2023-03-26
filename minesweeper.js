@@ -6,11 +6,11 @@
 		return;
 	}
 
-	if ('serviceWorker' in navigator)
+	if ("serviceWorker" in navigator)
 	{
 		navigator.serviceWorker
-			.register('/minesweeper/sw.js')
-			.then(() => { console.log('Service Worker Registered'); });
+			.register("/minesweeper/sw.js")
+			.then(() => { console.log("Service Worker Registered"); });
 	}
 
 	class MineSweeper
