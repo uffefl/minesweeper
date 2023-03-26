@@ -1,0 +1,15 @@
+{
+  "background_color": "#000",
+  "description": "Minesweeper. You got this.",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "minesweeper.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "name": "Minesweeper",
+  "short_name": "Minesweeper",
+  "start_url": "index.html"
+}
