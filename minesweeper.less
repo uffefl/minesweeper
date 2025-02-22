@@ -244,6 +244,60 @@
 			border: var(--rise) inset var(--light);
 		}
 	}
+
+	div#status
+	{
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: calc(var(--dim) - var(--gap));
+		line-height: calc(var(--dim) - var(--gap));
+		background: #000;
+		color: #fff;
+		font-size: var(--number-size);
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	div#remaining
+	{
+		width: 40%;
+		text-align: left;
+		&::before 
+		{
+			content: "💣";
+		}
+	}
+
+	div#time
+	{
+		width: 40%;
+		text-align: right;
+		&::after 
+		{
+			content: "⏰";
+		}
+	}
+
+	button#forfeit
+	{
+		appearance: none;
+		border: none;
+		background: transparent;
+		color: #fff;
+		height: var(--dim);
+		width: var(--dim);
+		font-size: 0;
+	}
+	button#forfeit::before
+	{
+		content: "🙂";
+		display: block;
+		font-size: var(--number-size);
+	}
 }
 
 body

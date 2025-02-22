@@ -94,6 +94,9 @@
 		Height;
 		MoatSize;
 
+		MineCount;
+		FlagCount;
+
 		constructor(numTiles,density,moatSize)
 		{
 			this.NumTiles = numTiles;
@@ -110,6 +113,8 @@
 			let queue = [];
 			console.log("Update()","Starting game...");
 			let root = game.Start();
+			let remaining = $("#remaining");
+			let time = $("#time");
 			root.addClass("active");
 			root.on("click contextmenu touchend","tile", OnFirstClick);
 			await WaitForGo();
@@ -211,6 +216,7 @@
 			{
 				await Wait(0);
 				if ((won || lost) && !queue.length) break;
+				time.text(Math.floor((new Date()-time0)/1000));
 				for (let i=0; queue.length && i<5; i++)
 				{
 					let tile = queue.pop();
@@ -315,7 +321,18 @@
 			function Flag(tile)
 			{
 				if (!tile.is(".hidden")) return;
-				tile.toggleClass("flag");
+				let removing = tile.is(".flag");
+				if (removing)
+				{
+					game.FlagCount--;
+					tile.removeClass("flag");
+				}
+				else
+				{
+					game.FlagCount++;
+					tile.addClass("flag");
+				}
+				remaining.text(game.MineCount - game.FlagCount);
 				ConsiderNeighbors(tile);
 				CheckWin();
 			}
@@ -364,9 +381,18 @@
 			// 	vw = vh = Math.min(vw,vh)*0.8;
 			// }
 
-			let a = this.NumTiles + 4*this.MoatSize*this.MoatSize;
-			let b = 2*this.MoatSize*(vh + vw);
-			let c = -vw*vh;
+			// (vw-2*moat*dim)*(vh-(2*moat+1)*dim) = numTiles*dim*dim
+			// vw*vh-2*moat*dim*vh-vw*(2*moat+1)*dim+2*moat*dim*(2*moat+1)*dim = numTiles*dim*dim
+			// -dim*2*moat*vh-dim*vw*(2*moat+1)+dim*dim*2*moat*(2*moat+1)-numTiles*dim*dim = -vw*vh
+			// dim*dim*(2*moat*(2*moat+1)-numTiles) + dim*(-2*moat*vh-vw*(2*moat+1)) + vw*vh = 0
+
+			let a = 2*this.MoatSize*(2*this.MoatSize+1)-this.NumTiles;
+			let b = -vh*2*this.MoatSize - vw*(2*this.MoatSize+1);
+			let c = vw*vh;
+			
+			// let a = this.NumTiles + 4*this.MoatSize*this.MoatSize;
+			// let b = 2*this.MoatSize*(vh + vw);
+			// let c = -vw*vh;
 			let d = b*b - 4*a*c;
 			let s1 = (-b + Math.sqrt(d))/2/a;
 			let s2 = (-b - Math.sqrt(d))/2/a;
@@ -376,12 +402,17 @@
 			this.Height = Math.floor(vh/dim);
 
 			// let notify = $("body").make("div.notify")
-			// 	.text(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize)}`);
+			// 	.text(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize-1)}`);
 			// setTimeout(_ => notify.remove(), 2000);
-			console.log(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize)}`);
+			console.log(`desired ${this.NumTiles} and got ${(this.Width-2*this.MoatSize)*(this.Height-2*this.MoatSize-1)}`);
 
 			let root = $("#minesweeper");
 			root.children().remove();
+
+			let status = root.make("div#status");
+			let remaining = status.make("div#remaining").text("—");
+			let forfeit = status.make("button#forfeit").text("Forfeit!");
+			let time = status.make("div#time").text("—");
 
 			root[0].style.setProperty("--dim", dim+"px");
 
@@ -389,7 +420,7 @@
 			root[0].style.setProperty("--height",this.Height);
 			root[0].style.setProperty("--min",Math.min(this.Width,this.Height));
 			root[0].style.setProperty("--max",Math.max(this.Width,this.Height));
-			for (let y=0; y<this.Height; y++)
+			for (let y=1; y<this.Height; y++)
 			{
 				for (let x=0; x<this.Width; x++)
 				{
@@ -399,17 +430,18 @@
 					tile[0].style.setProperty("--w",1);
 					tile[0].style.setProperty("--h",1);
 					tile[0].style.setProperty("--rnd",Math.random());
-					tile.toggleClass("moat",x<this.MoatSize || x>this.Width-this.MoatSize-1 || y<this.MoatSize || y>this.Height-this.MoatSize-1);
+					tile.toggleClass("moat",x<this.MoatSize || x>this.Width-this.MoatSize-1 || y<this.MoatSize+1 || y>this.Height-this.MoatSize-1);
 					tile.addClass(`nt-x${x-1}y${y-1}`); tile.addClass(`nt-x${ x }y${y-1}`); tile.addClass(`nt-x${x+1}y${y-1}`);
 					tile.addClass(`nt-x${x-1}y${ y }`);                                     tile.addClass(`nt-x${x+1}y${ y }`);
 					tile.addClass(`nt-x${x-1}y${y+1}`); tile.addClass(`nt-x${ x }y${y+1}`); tile.addClass(`nt-x${x+1}y${y+1}`);
 				}
 			}
-			let mineCount = this.Density*this.Width*this.Height;
-			for (let i=0; i<mineCount; i++)
+			this.FlagCount = 0;
+			this.MineCount = Math.round(this.Density*this.Width*(this.Height-1));
+			for (let i=0; i<this.MineCount; i++)
 			{
 				let x = Math.floor(Math.random()*(this.Width - 2*this.MoatSize - 0.0001)) + this.MoatSize;
-				let y = Math.floor(Math.random()*(this.Height - 2*this.MoatSize - 0.0001)) + this.MoatSize;
+				let y = Math.floor(Math.random()*(this.Height - 2*this.MoatSize - 1 - 0.0001)) + this.MoatSize + 1;
 				let tile = root.find(`> tile#x${x}y${y}`);
 				if (!tile.length || tile.is(".bomb"))
 				{
@@ -429,6 +461,7 @@
 					tile.addClass(`neighbor-${count}`);//.text(count||"")
 				}
 			}
+			remaining.text(this.MineCount);
 			return root;
 		}
 
