@@ -28,6 +28,16 @@
 			],
 			default: 150,
 		},
+		shape:
+		{
+			label: "Shape",
+			values:
+			[
+				["full", "Full", "full"],
+				["square", "Square", "square"],
+			],
+			default: false,
+		},
 		moat:
 		{
 			label: "Moat",
@@ -53,10 +63,12 @@
 			default: 0.13,
 		},
 	};
-	Settings.size.options = Object.fromEntries(Settings.size.values.map(([v,l]) => [`${v}`,`${l} (${v} tiles)`]));
+	Settings.size.options = Object.fromEntries(Settings.size.values.map(([v,l]) => [`${v}`,`${l} (~${v} tiles)`]));
+	Settings.shape.options = Object.fromEntries(Settings.shape.values.map(([v,l]) => [`${v}`,`${l}`]));
 	Settings.moat.options = Object.fromEntries(Settings.moat.values.map(([v,l]) => [`${v}`,v===0?l:v===1?`${l} (1 tile)`:`${l} (${v} tiles)`]));
 	Settings.density.options = Object.fromEntries(Settings.density.values.map(([v,l]) => [`${v}`,`${l} (${Math.round(v*100)}%)`]));
-	Settings.size.reverse = Object.fromEntries(Settings.size.values.map(([v,_,l]) => [`${v}`,`${l} (${v} tiles)`]));
+	Settings.size.reverse = Object.fromEntries(Settings.size.values.map(([v,_,l]) => [`${v}`,`${l} (~${v} tiles)`]));
+	Settings.shape.reverse = Object.fromEntries(Settings.shape.values.map(([v,_,l]) => [`${v}`,`${l}`]));
 	Settings.moat.reverse = Object.fromEntries(Settings.moat.values.map(([v,_,l]) => [`${v}`,v===0?l:v===1?`${l} (1 tile)`:`${l} (${v} tiles)`]));
 	Settings.density.reverse = Object.fromEntries(Settings.density.values.map(([v,_,l]) => [`${v}`,`${l} (${Math.round(v*100)}%)`]));
 	function Initialize()
@@ -88,6 +100,7 @@
 	class MineSweeper
 	{
 		NumTiles;
+		Shape;
 		Density;
 
 		Width;
@@ -97,9 +110,10 @@
 		MineCount;
 		FlagCount;
 
-		constructor(numTiles,density,moatSize)
+		constructor(numTiles,shape,density,moatSize)
 		{
 			this.NumTiles = numTiles;
+			this.Shape = shape;
 			this.Density = density;
 			this.MoatSize = moatSize;
 		}
@@ -376,6 +390,13 @@
 			let border = 4;
 			let vw = $(window).width() - 2*border;
 			let vh = $(window).height() - 2*border;
+
+			if (this.Shape==="square")
+			{
+				if (vw>vh) vw = vh;
+				else if (vh>vw) vh = vw;
+			}
+
 			// if (Math.min(vw,vh)>700)
 			// {
 			// 	vw = vh = Math.min(vw,vh)*0.8;
@@ -498,11 +519,12 @@
 	{
 		let ui = $("#ui");
 		let size = parseFloat(ui.find("#size").val());
+		let shape = ui.find("#shape").val();
 		let moat = parseFloat(ui.find("#moat").val());
 		let density = parseFloat(ui.find("#density").val());
 		console.log("size",size,"density",density,"moat",moat);
 		// return;
-		let game = new MineSweeper(size,density,moat);
+		let game = new MineSweeper(size,shape,density,moat);
 		ui.addClass("hidden");
 		$(window).on("resize", OnResize);
 		await game.Update();
@@ -516,6 +538,7 @@
 	{
 		Initialize();
 		if (localStorage.size) $("#ui #size").val(localStorage.size);
+		if (localStorage.shape) $("#ui #shape").val(localStorage.shape);
 		if (localStorage.moat) $("#ui #moat").val(localStorage.moat);
 		if (localStorage.density) $("#ui #density").val(localStorage.density);
 		$("#minesweeper").children().remove();
