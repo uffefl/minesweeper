@@ -17,6 +17,7 @@
 	{
 		size:
 		{
+			type: "dropdown",
 			label: "Size",
 			values:
 			[
@@ -27,19 +28,25 @@
 				[500, "Gargantuan", "gargantuan"],
 			],
 			default: 150,
+			deciding: true,
+			number: true,
+			display: v => `${v} tiles`,
 		},
 		shape:
 		{
+			type: "dropdown",
 			label: "Shape",
 			values:
 			[
 				["full", "Full", "full"],
 				["square", "Square", "square"],
 			],
-			default: false,
+			default: "full",
+			display: v => `${v} shape`,
 		},
 		moat:
 		{
+			type: "dropdown",
 			label: "Moat",
 			values:
 			[
@@ -48,9 +55,13 @@
 				[2, "Full", "full moat"],
 			],
 			default: 0,
+			deciding: true,
+			number: true,
+			display: v => `${v} tile moat`,
 		},
 		density:
 		{
+			type: "dropdown",
 			label: "Difficulty",
 			values:
 			[
@@ -61,7 +72,88 @@
 				[0.25, "Insane", "insane"],
 			],
 			default: 0.13,
+			deciding: true,
+			number: true,
+			display: v => `${Math.round(v*100)}% density`,
 		},
+	};
+	const Options =
+	{
+		clearTile:
+		{
+			type: "radio",
+			label: "Clear Tile",
+			values:
+			[
+				["Left Click", "Left Click", "left click"],
+				["Right Click", "Right Click", "right click"],
+				["Long Click", "Long Click", "long click"],
+			],
+			default: "Right Click",
+			display: v => `clear tile: ${v}`,
+		},
+		flagMine:
+		{
+			type: "radio",
+			label: "Flag Mine",
+			values:
+			[
+				["Left Click", "Left Click", "left click"],
+				["Right Click", "Right Click", "right click"],
+				["Long Click", "Long Click", "long click"],
+			],
+			default: "Left Click",
+			display: v => `flag mine: ${v}`,
+		},
+		clearNeighbors:
+		{
+			type: "radio",
+			label: "Clear Neighbors",
+			values:
+			[
+				["Left Click", "Left Click", "left click"],
+				["Right Click", "Right Click", "right click"],
+				["Long Click", "Long Click", "long click"],
+			],
+			default: "Left Click",
+			display: v => `clear neighbors: ${v}`,
+		},
+		autoClearEmpty:
+		{
+			type: "checkbox",
+			group: "Auto Clear",
+			label: "Empty Tiles",
+			default: true,
+			deciding: true,
+			display: v => v ? "auto clear empty tiles" : "",
+		},
+		autoClearFlagged:
+		{
+			type: "checkbox",
+			group: "Auto Clear",
+			label: "Flagged Tiles",
+			default: true,
+			deciding: true,
+			display: v => v ? "auto clear flagged tiles" : "",
+		},
+		autoFinishNoMines:
+		{
+			type: "checkbox",
+			group: "Auto Finish",
+			label: "No Mines Left",
+			default: true,
+			deciding: true,
+			display: v => v ? "auto finish when no mines left" : "",
+		},
+		autoFinishOnlyMines:
+		{
+			type: "checkbox",
+			group: "Auto Finish",
+			label: "Only Mines Left",
+			default: true,
+			deciding: true,
+			display: v => v ? "auto finish when only mines left" : "",
+		}
 	};
 	Settings.size.options = Object.fromEntries(Settings.size.values.map(([v,l]) => [`${v}`,`${l} (~${v} tiles)`]));
 	Settings.shape.options = Object.fromEntries(Settings.shape.values.map(([v,l]) => [`${v}`,`${l}`]));
@@ -71,23 +163,68 @@
 	Settings.shape.reverse = Object.fromEntries(Settings.shape.values.map(([v,_,l]) => [`${v}`,`${l}`]));
 	Settings.moat.reverse = Object.fromEntries(Settings.moat.values.map(([v,_,l]) => [`${v}`,v===0?l:v===1?`${l} (1 tile)`:`${l} (${v} tiles)`]));
 	Settings.density.reverse = Object.fromEntries(Settings.density.values.map(([v,_,l]) => [`${v}`,`${l} (${Math.round(v*100)}%)`]));
+
+	Options.clearTile.options = Object.fromEntries(Options.clearTile.values.map(([v,l]) => [`${v}`,`${l}`]));
+	Options.clearTile.reverse = Object.fromEntries(Options.clearTile.values.map(([v,_,l]) => [`${v}`,`${l}`]));
+	Options.flagMine.options = Object.fromEntries(Options.flagMine.values.map(([v,l]) => [`${v}`,`${l}`]));
+	Options.flagMine.reverse = Object.fromEntries(Options.flagMine.values.map(([v,_,l]) => [`${v}`,`${l}`]));
+	Options.clearNeighbors.options = Object.fromEntries(Options.clearNeighbors.values.map(([v,l]) => [`${v}`,`${l}`]));
+	Options.clearNeighbors.reverse = Object.fromEntries(Options.clearNeighbors.values.map(([v,_,l]) => [`${v}`,`${l}`]));
+
+	function Dropdown(parent,k,v)
+	{
+		let label = $('<div class="group">').appendTo(parent);
+		$("<p>").text(v.label).appendTo(label);
+		let select = $("<select>").attr("name",k).appendTo(label);
+		for (let [val,text] of Object.entries(v.options))
+		{
+			$("<option>").attr("value",val).text(text).appendTo(select);
+		}
+	}
+
+	function Radio(parent,k,v)
+	{
+		let group = $('<div class="group">').appendTo(parent);
+		$("<p>").text(v.label).appendTo(group);
+		for (let [val,text] of Object.entries(v.options))
+		{
+			$(`<label><input type="radio" name="${k}" value="${val}"/>${text}</label>`).appendTo(group);
+		}
+	}
+
+	function Checkbox(parent,k,text)
+	{
+		$(`<label><input type="checkbox" name="${k}"/>${text}</label>`).appendTo(parent);
+	}
+
 	function Initialize()
 	{
 		let ui = $("body").make("div#ui").addClass("hidden");
 		ui.children().remove();
-		$("<p>").text("Minesweeper").appendTo(ui);
+
+		let gameSettings = ui.make("div#settings");
+		let heading1 = $("<p>").text("Minesweeper").appendTo(gameSettings);
+		// let b1 = $("<button>&gt;&gt;</button>").appendTo(heading1);
 		for (let [k,v] of Object.entries(Settings))
 		{
-			let label = $("<label>").appendTo(ui);
-			$("<p>").text(v.label).appendTo(label);
-			let select = $("<select>").attr("id",k).appendTo(label);
-			for (let [val,text] of Object.entries(v.options))
-			{
-				$("<option>").attr("value",val).text(text).appendTo(select);
-			}
+			Dropdown(gameSettings, k, v);
 		}
-		$("<label><p>Personal best</p><p id=\"pb\"></p>").appendTo(ui);
-		$("<button>").attr("id","start").text("Start!").appendTo(ui);
+		$("<label><p>Personal best</p><p id=\"pb\"></p>").appendTo(gameSettings);
+		$("<button>").attr("id","start").text("Start!").appendTo(gameSettings);
+
+		let gameOptions = ui.make("div#options");
+		$("<p>").text("Options").appendTo(gameOptions);
+		let presets = $(`<div class="group">`).appendTo(gameOptions).append("<p>Presets</p>");
+		presets.append("<button>Classic</button><button>Touch</button><button>Custom</button>");
+		Radio(gameOptions, "clearTile", Options["clearTile"]);
+		Radio(gameOptions, "flagMine", Options["flagMine"]);
+		Radio(gameOptions, "clearNeighbors", Options["clearNeighbors"]);
+		let autoClear = $('<div class="group">').appendTo(gameOptions).append("<p>Auto Clear</p>");
+		Checkbox(autoClear,"autoClearEmpty",Options["autoClearEmpty"].label);
+		Checkbox(autoClear,"autoClearFlagged",Options["autoClearFlagged"].label);
+		let autoFinish = $('<div class="group">').appendTo(gameOptions).append("<p>Auto Finish</p>");
+		Checkbox(autoFinish,"autoFinishNoMines",Options["autoFinishNoMines"].label);
+		Checkbox(autoFinish,"autoFinishOnlyMines",Options["autoFinishOnlyMines"].label);
 
 		let best = $("body").make("div#best").addClass("hidden");
 		best.children().remove();
@@ -99,6 +236,8 @@
 
 	class MineSweeper
 	{
+		BestKey;
+
 		NumTiles;
 		Shape;
 		Density;
@@ -110,12 +249,14 @@
 		MineCount;
 		FlagCount;
 
-		constructor(numTiles,shape,density,moatSize)
+		constructor(settings, bestKey)
 		{
-			this.NumTiles = numTiles;
-			this.Shape = shape;
-			this.Density = density;
-			this.MoatSize = moatSize;
+			this.NumTiles = settings.size;
+			this.Shape = settings.shape;
+			this.Density = settings.density;
+			this.MoatSize = settings.moat;
+
+			this.BestKey = bestKey;
 		}
 
 		async Update()
@@ -137,6 +278,11 @@
 				go = true;
 				e.preventDefault();
 				Reveal($(e.target));
+			}
+			function OnLastClick(e)
+			{
+				go = true;
+				e.preventDefault();
 			}
 			let time0 = new Date();
 			root.off("click contextmenu touchend", "tile", OnFirstClick);
@@ -230,7 +376,8 @@
 			{
 				await Wait(0);
 				if ((won || lost) && !queue.length) break;
-				time.text(Math.floor((new Date()-time0)/1000));
+				time.text(Clock((new Date()-time0)/1000));
+				// time.text(Math.floor((new Date()-time0)/1000));
 				for (let i=0; queue.length && i<5; i++)
 				{
 					let tile = queue.pop();
@@ -261,16 +408,20 @@
 			root.removeClass("active");
 			$("body").toggleClass("won",!!won).toggleClass("lost",!!lost);
 			console.log("Update()",`Game over. Duration ${(time1-time0)/1000} s.`);
+			root.on("click contextmenu touchend", OnLastClick);
+			await WaitForGo();
+			root.off("click contextmenu touchend", OnLastClick);
 			if (won)
 			{
-				let bestKey = `best ${this.NumTiles} ${this.MoatSize} ${this.Density}`
-				let duration = (time1-time0)/1000;
+				let bestKey = this.BestKey;
+				let duration = Math.floor((time1-time0)/1000);
 				let best = localStorage[bestKey]===undefined ? Infinity : JSON.parse(localStorage[bestKey]);
 				if (duration<best)
 				{
 					localStorage[bestKey] = JSON.stringify(duration);
-					$("#best #time").text(`${Math.round(10*duration)/10} s`);
-					$("#best #settings").text(`${Settings.size.reverse[this.NumTiles] ?? `${this.NumTiles} tiles`}, ${Settings.moat.reverse[this.MoatSize] ?? `${this.MoatSize} tile moat`}, ${Settings.density.reverse[this.Density] ?? `${Math.round(100*this.Density)}% difficulty`}`);
+					$("#best #time").text(Clock(duration));
+					// $("#best #time").text(`${Math.round(10*duration)/10} s`);
+					$("#best #settings").text(GetBestDescription());
 					$("#best").removeClass("hidden");
 					$("#best button").on("click", OnGreat);
 					await WaitForGo();
@@ -498,33 +649,95 @@
 	$(document).on("change", "#ui", e =>
 	{
 		let input = e.target;
-		let id = $(input).attr("id");
-		let value = $(input).val();
-		localStorage[id] = value;
+		let k = $(input).attr("name");
+		let value = GetSetting(k);
+		localStorage[k] = value;
 		ShowPb();
-		console.log("change",id,value);
+		console.log("change",k,value);
 	});
+
+	function GetSetting(k)
+	{
+		let setting = Settings[k] ?? Options[k];
+		let value;
+		if (!setting)
+		{
+			console.log("unknown setting",k);
+			return;
+		}
+		if (setting.type==="dropdown")
+		{
+			value = $(`#ui select[name="${k}"]`).val();
+		}
+		else if (setting.type==="radio")
+		{
+			value = $(`#ui input[type=radio][name="${k}"]:checked`).val();
+		}
+		else if (setting.type==="checkbox")
+		{
+			value = $(`#ui input[type=checkbox][name="${k}"]`).prop("checked");
+		}
+		else
+		{
+			console.log("unknown setting type", setting.type, "for key",k);
+			return;
+		}
+		if (setting.number) value = parseFloat(value);
+		return value;
+	}
+
+	function GetBestKey()
+	{
+		let deciding = [...Object.entries(Settings)] // , ...Object.entries(Options)] // TODO
+			.filter(([k,v]) => v.deciding)
+			.map(([k,v]) => `${k}=${GetSetting(k)}`)
+			.join(" ");
+		return `best ${deciding}`;
+	}
+
+	function GetBestDescription()
+	{
+		let deciding = [...Object.entries(Settings)] // , ...Object.entries(Options)] // TODO
+			.filter(([k,v]) => v.deciding)
+			.map(([k,setting]) =>
+			{
+				let value = GetSetting(k);
+				return setting.reverse?.[value] ?? setting.display(value);
+			})
+			.filter(s => s)
+			.join(", ");
+		return deciding;
+	}	
 
 	function ShowPb()
 	{
-		let size = $("#ui #size").val();
-		let moat = $("#ui #moat").val();
-		let density = $("#ui #density").val();
-		let bestKey = `best ${size} ${moat} ${density}`;
+		let bestKey = GetBestKey();
 		let best = localStorage[bestKey];
-		$("#ui #pb").text(best===undefined ?"" : `${Math.round(10*best)/10} s`);
+		$("#ui #pb").text(best===undefined ? "" : Clock(parseFloat(best)));
+		// $("#ui #pb").text(best===undefined ? "" : `${Math.round(10*best)/10} s`);
+	}
+
+	function Clock(clock)
+	{
+		let hours = Math.floor(clock/60/60);
+		let minutes = Math.floor(clock/60)%60;
+		let seconds = Math.floor(clock)%60;
+		hours = hours<=0 ? "" : hours+":";
+		minutes = hours && minutes<10 ? "0"+minutes+":" : minutes+":";
+		seconds = seconds<10 ? "0"+seconds : seconds+"";
+		return hours+minutes+seconds;
 	}
 
 	async function PlayGame()
 	{
-		let ui = $("#ui");
-		let size = parseFloat(ui.find("#size").val());
-		let shape = ui.find("#shape").val();
-		let moat = parseFloat(ui.find("#moat").val());
-		let density = parseFloat(ui.find("#density").val());
-		console.log("size",size,"density",density,"moat",moat);
+		let settings = Object.fromEntries([...Object.keys(Settings), ...Object.keys(Options)]
+			.map(k => [k,GetSetting(k)]));
+		let bestKey = GetBestKey();
+		console.log("settings", settings);
+		console.log("bestKey", bestKey);
 		// return;
-		let game = new MineSweeper(size,shape,density,moat);
+		let game = new MineSweeper(settings, bestKey);
+		let ui = $("#ui");
 		ui.addClass("hidden");
 		$(window).on("resize", OnResize);
 		await game.Update();
@@ -534,13 +747,42 @@
 		function OnResize() { return game.OnResize(); }
 	} 
 
+	function RestoreSetting(k)
+	{
+		let setting = Settings[k] ?? Options[k];
+		let val = localStorage[k] ?? setting.default;
+		if (setting.type==="dropdown")
+		{
+			console.log("restoring","dropdown",k,"to",val);
+			$(`#ui select[name="${k}"]`).val(val);
+			return;
+		}
+		if (setting.type==="radio")
+		{
+			console.log("restoring","radio",k,"to",val);
+			$(`#ui input[type=radio][name="${k}"][value="${val}"]`).prop("checked",true);
+			return;
+		}
+		if (setting.type==="checkbox")
+		{
+			console.log("restoring","checkbox",k,"to",val);
+			$(`#ui input[type=checkbox][name="${k}"]`).prop("checked",val==="true");
+			return;
+		}
+		console.log("unknown setting type",setting.type,"for key",k);
+	}
+
 	async function OnLoad()
 	{
 		Initialize();
-		if (localStorage.size) $("#ui #size").val(localStorage.size);
-		if (localStorage.shape) $("#ui #shape").val(localStorage.shape);
-		if (localStorage.moat) $("#ui #moat").val(localStorage.moat);
-		if (localStorage.density) $("#ui #density").val(localStorage.density);
+		for (let k of Object.keys(Settings))
+		{
+			RestoreSetting(k);
+		}
+		for (let k of Object.keys(Options))
+		{
+			RestoreSetting(k);
+		}
 		$("#minesweeper").children().remove();
 		$("#ui").removeClass("hidden").find("button").focus();
 		ShowPb();

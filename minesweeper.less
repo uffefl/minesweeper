@@ -1,10 +1,10 @@
-﻿#minesweeper
+#minesweeper
 {
 	--vmin: calc(100vmin);
 	--vmax: 100vmax;
 	--dim: calc((100vmin - 2*var(--border-size)) / var(--min));
-	--gap: 1px;
-	--rise: calc(0.05*var(--dim));
+	--gap: 0px;
+	--rise: calc(0.1*var(--dim));
 	--dark: #aaa;
 	--dark-hi: #b4b4b4;
 	--mid: #ccc;
@@ -14,7 +14,7 @@
 	--moat: #ccf;
 	--moat-hi: #ddf;
 	--border-size: 4px;
-	--number-size: calc(0.5*var(--dim));
+	--number-size: calc(0.62*var(--dim));
 	--flag-size: calc(0.4*var(--dim));
 	--bomb-size: calc(0.6*(var(--dim) - var(--gap)));
 
@@ -24,18 +24,36 @@
 	{
 		animation-name: wiggle;
 		animation-delay: calc(-1s * var(--rnd));
-		animation-duration: 0.5s;
+		animation-duration: 0.3s;
 		animation-iteration-count: infinite;
 		animation-timing-function: ease-in-out;
 	}
 
 	@keyframes wiggle 
 	{
-		 0% { transform: translate( 50%,50%) rotate(  0.5deg) translate(-50%,-50%); }
-		25% { transform: translate(-50%,50%) rotate( -0.5deg) translate( 50%,-50%); }
-		50% { transform: translate( 50%,50%) rotate(  1.0deg) translate(-50%,-50%); }
-		75% { transform: translate(-50%,50%) rotate( -0.3deg) translate( 50%,-50%); }
-	   100% { transform: translate( 50%,50%) rotate(  0.5deg) translate(-50%,-50%); }
+		 0% { transform: rotate(  1.0deg); }
+		25% { transform: rotate( -1.0deg); }
+		50% { transform: rotate(  2.0deg); }
+		75% { transform: rotate( -0.6deg); }
+	   100% { transform: rotate(  1.0deg); }
+	}
+
+	.fall()
+	{
+		animation-name: fall;
+		animation-delay: calc(1s * var(--rnd));
+		animation-duration: 1s;
+		animation-iteration-count: 1;
+		animation-timing-function: ease-in;
+		animation-fill-mode: both;
+	}
+
+	@keyframes fall 
+	{
+		 0% { transform: translateY(  0%) rotate(  0.0deg); }
+		10% { transform: translateY(-15%) rotate(  0.0deg); }
+	    90% { transform: translateY( 20%) rotate(105.0deg); }
+	   100% { transform: translateY( 25%) rotate( 90.0deg); }
 	}
 
 	.notice()
@@ -83,18 +101,21 @@
 	background: var(--dark);
 	body.won &, body.lost &
 	{
-		> tile.bomb:after
+		> tile.bomb:not(.flag):after
 		{
 			.wiggle();
-			text-shadow: 0 0 12px #f00;
-			color: #800;
+			// text-shadow: 0 0 12px #f00;
+			// color: #800;
 		}
-		> tile.flag:after, 
-		> tile.flag.bomb:after
+		> tile.flag:after
 		{
-			.wiggle();
-			text-shadow: 0 0 12px #0f0;
-			color: #080;
+			// .wiggle();
+			// text-shadow: 0 0 12px #0f0;
+			// color: #080;
+		}
+		> tile.flag:not(.bomb):after
+		{
+			.fall();
 		}
 	}
 	user-select: none;
@@ -106,6 +127,7 @@
 		left: calc(var(--x) * var(--dim) + var(--gap));
 		width: calc(var(--w) * var(--dim) - var(--gap));
 		height: calc(var(--h) * var(--dim) - var(--gap));
+		border: 1px inset var(--light);
 		&:before, &:after
 		{
 			display: block;
@@ -116,11 +138,11 @@
 			left: 0;
 			right: 0;
 			text-align: center;
-			font-size: var(--number-size);
+			font-size: calc(var(--number-size) * 1.38); // pretty specific for Arial, I guess
 			font-family: sans-serif;
-			font-weight: bold;
-			line-height: calc(var(--dim) - 2*var(--rise));
+			line-height: calc(var(--dim) - 2*var(--rise) + 2px);
 			text-align: center;
+			z-index: 1;
 		}
 		background: var(--mid);
 		&.moat
@@ -129,7 +151,7 @@
 		}
 		&:before
 		{
-			border: var(--rise) solid transparent;
+			border: var(--rise) outset transparent;
 		}
 		&.hidden:before
 		{
@@ -142,13 +164,21 @@
 		}
 		&.shown, body.lost &
 		{
-			&.bomb:after
+			&.bomb:not(.flag):after
 			{
-				content: "💣";
-				color: #000;
-				font-size: var(--bomb-size);
-				line-height: calc(var(--dim) - var(--gap));
+				// content: "💣";
+				// color: #000;
+				// font-size: var(--bomb-size);
+				// line-height: calc(var(--dim) - var(--gap));
+				content: "";
+				background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzLjQ4NTA1ODU5IDMuNDg1MDU4NTkiPgogIDxwYXRoIHN0eWxlPSJmaWxsOiMwMDA7c3Ryb2tlOm5vbmUiIGQ9Ik0gMS41NjI2OTUzLDAuMDk4NzAxOTkgViAwLjQ1MzIwMjMxIEEgMS4zLDEuMyAwIDAgMCAwLjkwODQ3MTY4LDAuNzI1MDIwMzUgTCAwLjY1NzMyNDIyLDAuNDczODcyODggMC40NDQ0MTczMiwwLjY4Njc3OTc5IDAuNjk1NTY0NzgsMC45Mzc5MjcyNSBBIDEuMywxLjMgMCAwIDAgMC40MjM3NDY3NCwxLjU5MjE1MDkgSCAwLjA2OTI0NjQyIFYgMS44OTM0MjQ1IEggMC40MjM3NDY3NCBBIDEuMywxLjMgMCAwIDAgMC42OTU1NjQ3OCwyLjU0NzEzMTMgTCAwLjQ0NDQxNzMyLDIuNzk4Mjc4OCAwLjY1NzMyNDIyLDMuMDExMTg1NyAwLjkwODQ3MTY4LDIuNzYwMDM4MiBBIDEuMywxLjMgMCAwIDAgMS41NjI2OTUzLDMuMDMxODU2MyBWIDMuMzg2MzU2NiBIIDEuODYzNDUyMSBWIDMuMDMxODU2MyBBIDEuMywxLjMgMCAwIDAgMi41MTc2NzU4LDIuNzYwMDM4MiBMIDIuNzY4ODIzMiwzLjAxMTE4NTcgMi45ODE3MzAxLDIuNzk4Mjc4OCAyLjczMDU4MjcsMi41NDcxMzEzIEEgMS4zLDEuMyAwIDAgMCAzLjAwMjQwMDcsMS44OTM0MjQ1IEggMy4zNTY5MDEgViAxLjU5MjE1MDkgSCAzLjAwMjQwMDcgQSAxLjMsMS4zIDAgMCAwIDIuNzMwNTgyNywwLjkzNzkyNzI1IEwgMi45ODE3MzAxLDAuNjg2Nzc5NzkgMi43Njg4MjMyLDAuNDczODcyODggMi41MTc2NzU4LDAuNzI1MDIwMzUgQSAxLjMsMS4zIDAgMCAwIDEuODYzNDUyMSwwLjQ1MzIwMjMxIFYgMC4wOTg3MDE5OSBaIiAvPgogIDxjaXJjbGUgc3R5bGU9ImZpbGw6I2ZmZjtzdHJva2U6bm9uZSIgY3g9IjEuMzMwMzY4MiIgY3k9IjEuMzI2MTkxMiIgcj0iMC4zMDAwMDAwMSIgLz4KPC9zdmc+Cg==");
+				background-size: auto var(--bomb-size);
+				background-position: center;
+				background-repeat: no-repeat;
 			}
+		}
+		&.shown, body.lost-disabled &
+		{
 			&.neighbor-1:before
 			{
 				content: "1";
@@ -190,6 +220,10 @@
 				color: turquoise;
 			}
 		}
+		&.shown.bomb
+		{
+			background: red;
+		}
 		&.shown.bomb:before
 		{
 			content: "💥";
@@ -198,7 +232,7 @@
 			transform: rotate(-7deg);
 			.boom();
 		}
-		body.lost &.hidden:before
+		body.lost-disabled &.hidden:before
 		{
 			opacity: 0.5;
 		}
@@ -207,10 +241,16 @@
 			&.flag:after
 			{
 				// content: "⚑⚐🏁🏳🚩🏴⛿";
-				content: "🏴";
-				color: #000;
-				font-size: var(--flag-size);
-				line-height: var(--dim);
+				// content: "🏴";
+				// color: #000;
+				// font-size: var(--flag-size);
+				// line-height: var(--dim);
+				content: "";
+				background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5Ljc4OTU4MzMgOS43ODk1ODMzIj4KICA8cGF0aCBzdHlsZT0iZmlsbDojMDAwO3N0cm9rZTpub25lIiBkPSJNIDUuNTQ2OTQ4Miw0LjY0ODgxMTggViA3Ljk2OTUzOTQgTCAwLjQxNzU0NTU3LDkuNzg5NTgzMyBIIDkuNzg5NTgzMyBMIDYuNTgzMDYwNyw4LjAxOTY2NTUgViA1LjA0NTY4NjggWiIgLz4KICA8cGF0aCBzdHlsZT0iZmlsbDojZjAwO3N0cm9rZTpub25lIiBkPSJNIDYuNTgyOTIwOCwwIDAsMi41MjI4OTYgNi41ODI5MjA4LDUuMDQ1NzkyIFoiIC8+Cjwvc3ZnPgo=");
+				background-size: auto var(--number-size);
+				background-repeat: no-repeat;
+				background-position: center;
+				z-index: 0;
 			}
 		}
 	}
@@ -321,7 +361,6 @@ body
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%,-50%);
-	width: 16em;
 	padding: 1em;
 	z-index: 1000;
 	background: #eee;
@@ -332,17 +371,107 @@ body
 	{
 		transform: translate(-50%,150vh);
 	}
-	> *
+}
+#ui
+{
+	display: flex;
+	flex-direction: row;
+	gap: 1em;
+	&, *
 	{
-		margin: 0.5em 0;
+		box-sizing: border-box;
 	}
-	> *:first-child
+	// width: 50.5em;
+	// width: 23.5em;
+	// overflow: hidden;
+	transition: 0.3s ease-in-out width;
+	> #settings
 	{
-		margin-top: 0;
+		min-width: 21em;
 	}
-	> *:last-child
+	> #options
 	{
-		margin-bottom: 0;
+		min-width: 25em;
+		display: none; // TODO
+	}
+	> #settings, > #options
+	{
+		> *
+		{
+			// margin: 0.5em 0;
+		}
+		> *:first-child
+		{
+			margin-top: 0;
+		}
+		> *:last-child
+		{
+			margin-bottom: 0;
+		}
+		.group
+		{
+			display: flex;
+			flex-direction: row;
+			align-items: stretch;
+			> p
+			{
+				// flex-grow: 1;
+				text-align: left;
+				width: 8em;
+			}
+			> :not(p)
+			{
+				flex-grow: 1;
+				margin: 0.5em 0;
+			}
+			> button
+			{
+				border: 1px solid gray;
+				border-radius: 4px;
+				padding: 4px;
+				background: rgb(233, 233, 237);
+				&:not(:first-of-type)
+				{
+					border-top-left-radius: 0;
+					border-bottom-left-radius: 0;
+				}
+				&:not(:last-of-type)
+				{
+					border-top-right-radius: 0;
+					border-bottom-right-radius: 0;
+					border-right: none;
+				}
+			}
+			> label
+			{
+				appearance: button;
+				align-items: center;
+				>input[type=radio],>input[type=checkbox]
+				{
+					margin: 0 0.25rem;
+				}
+				&:has(>input[type=radio],>input[type=checkbox])
+				{
+					border: 1px solid gray;
+					border-radius: 4px;
+					padding: 4px;
+					font-size: 80%;
+					background: rgb(233, 233, 237);
+					justify-content: flex-start;
+					&:not(:first-of-type)
+					{
+						border-top-left-radius: 0;
+						border-bottom-left-radius: 0;
+					}
+					&:not(:last-of-type)
+					{
+						border-top-right-radius: 0;
+						border-bottom-right-radius: 0;
+						border-right: none;
+					}
+				}
+			}
+		}
 	}
 	label
 	{
