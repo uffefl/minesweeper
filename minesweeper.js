@@ -541,6 +541,7 @@
 			let border = 4;
 			let vw = $(window).width() - 2*border;
 			let vh = $(window).height() - 2*border;
+			let random = splitmix32(); // TODO: optional player defined seed
 
 			if (this.Shape==="square")
 			{
@@ -583,7 +584,7 @@
 
 			let status = root.make("div#status");
 			let remaining = status.make("div#remaining").text("—");
-			let forfeit = status.make("button#forfeit").text("Forfeit!");
+			let forfeit = status.make("button#forfeit").text("Forfeit!").attr("title",`Seed: ${random.seed}`);
 			let time = status.make("div#time").text("—");
 
 			root[0].style.setProperty("--dim", dim+"px");
@@ -601,7 +602,7 @@
 					tile[0].style.setProperty("--y",y);
 					tile[0].style.setProperty("--w",1);
 					tile[0].style.setProperty("--h",1);
-					tile[0].style.setProperty("--rnd",Math.random());
+					tile[0].style.setProperty("--rnd",random());
 					tile.toggleClass("moat",x<this.MoatSize || x>this.Width-this.MoatSize-1 || y<this.MoatSize+1 || y>this.Height-this.MoatSize-1);
 					tile.addClass(`nt-x${x-1}y${y-1}`); tile.addClass(`nt-x${ x }y${y-1}`); tile.addClass(`nt-x${x+1}y${y-1}`);
 					tile.addClass(`nt-x${x-1}y${ y }`);                                     tile.addClass(`nt-x${x+1}y${ y }`);
@@ -612,8 +613,8 @@
 			this.MineCount = Math.round(this.Density*this.Width*(this.Height-1));
 			for (let i=0; i<this.MineCount; i++)
 			{
-				let x = Math.floor(Math.random()*(this.Width - 2*this.MoatSize - 0.0001)) + this.MoatSize;
-				let y = Math.floor(Math.random()*(this.Height - 2*this.MoatSize - 1 - 0.0001)) + this.MoatSize + 1;
+				let x = Math.floor(random()*(this.Width - 2*this.MoatSize - 0.0001)) + this.MoatSize;
+				let y = Math.floor(random()*(this.Height - 2*this.MoatSize - 1 - 0.0001)) + this.MoatSize + 1;
 				let tile = root.find(`> tile#x${x}y${y}`);
 				if (!tile.length || tile.is(".bomb"))
 				{
@@ -770,6 +771,30 @@
 			return;
 		}
 		console.log("unknown setting type",setting.type,"for key",k);
+	}
+
+	function splitmix32(seed)
+	{
+		// Source - https://stackoverflow.com/a/47593316
+		// Posted by bryc, modified by community. See post 'Timeline' for change history
+		// Retrieved 2026-03-14, License - CC BY-SA 4.0
+		function splitmix32(a)
+		{
+			return function()
+			{
+				a |= 0;
+				a = a + 0x9e3779b9 | 0;
+				let t = a ^ a >>> 16;
+				t = Math.imul(t, 0x21f0aaad);
+				t = t ^ t >>> 15;
+				t = Math.imul(t, 0x735a2d97);
+				return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
+			}
+		}
+		seed = (seed===undefined?Math.random()*2**32:seed)>>>0;
+		let random = splitmix32(seed);
+		random.seed = seed;
+		return random;
 	}
 
 	async function OnLoad()

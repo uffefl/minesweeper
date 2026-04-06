@@ -31,11 +31,29 @@
 
 	@keyframes wiggle 
 	{
-		 0% { transform: rotate(  1.0deg); }
-		25% { transform: rotate( -1.0deg); }
-		50% { transform: rotate(  2.0deg); }
-		75% { transform: rotate( -0.6deg); }
-	   100% { transform: rotate(  1.0deg); }
+		  0% { transform: rotate(  1.0deg); }
+		 25% { transform: rotate( -1.0deg); }
+		 50% { transform: rotate(  2.0deg); }
+		 75% { transform: rotate( -0.6deg); }
+		100% { transform: rotate(  1.0deg); }
+	}
+
+	.dance()
+	{
+		animation-name: dance;
+		animation-delay: calc(-1s * var(--rnd));
+		animation-duration: 0.3s;
+		animation-iteration-count: infinite;
+		animation-timing-function: ease-in-out;
+	}
+
+	@keyframes dance
+	{
+		  0% { transform: translate(-25%,25%) skewX(0deg) scaleY(1.0) translate(25%,-25%); }
+		 25% { transform: translate(-25%,25%) skewX(5deg) scaleY(1.1) translate(25%,-25%); }
+		 50% { transform: translate(-25%,25%) skewX(0deg) scaleY(0.9) translate(25%,-25%); }
+		 75% { transform: translate(-25%,25%) skewX(-5deg) scaleY(1.1) translate(25%,-25%); }
+		100% { transform: translate(-25%,25%) skewX(0deg) scaleY(1.0) translate(25%,-25%); }
 	}
 
 	.fall()
@@ -76,12 +94,12 @@
 
 	.boom()
 	{
-		animation-name: boom;
-		animation-delay: 0;
+		animation-name: boomwiggle;
+		// animation-delay: 0s;
+		animation-delay: calc(-1s * var(--rnd));
 		animation-duration: 0.3s;
-		animation-iteration-count: 1;
+		animation-iteration-count: infinite;
 		animation-timing-function: ease-in;
-		opacity: 0;
 	}
 
 	@keyframes boom
@@ -89,6 +107,15 @@
 		  0% { transform: rotate(0deg) scale(1); opacity: 0; }
 		 10% { opacity: 1; }
 		100% { transform: rotate(-7deg) scale(2); opacity: 0; }
+	}
+
+	@keyframes boomwiggle
+	{
+		  0% { transform: scale(1) rotate( 5deg) translate(-5%,0); }
+		 25% { transform: scale(1) rotate(-5deg) translate(-5%,0); }
+		 50% { transform: scale(1) rotate(10deg) translate(-5%,0); }
+		 75% { transform: scale(1) rotate(-3deg) translate(-5%,0); }
+		100% { transform: scale(1) rotate( 5deg) translate(-5%,0); }
 	}
 
 	display: block;
@@ -116,6 +143,15 @@
 		> tile.flag:not(.bomb):after
 		{
 			.fall();
+		}
+	}
+	body.won &
+	{
+		> tile.flag:after
+		{
+			.dance();
+			text-shadow: 0 0 12px #0f0;
+			color: #080;
 		}
 	}
 	user-select: none;
@@ -222,7 +258,7 @@
 		}
 		&.shown.bomb
 		{
-			background: red;
+			// background: red;
 		}
 		&.shown.bomb:before
 		{
