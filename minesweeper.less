@@ -23,7 +23,7 @@
 	.wiggle()
 	{
 		animation-name: wiggle;
-		animation-delay: calc(-1s * var(--rnd));
+		animation-delay: calc(-1000s * var(--rnd));
 		animation-duration: 0.3s;
 		animation-iteration-count: infinite;
 		animation-timing-function: ease-in-out;
@@ -41,7 +41,7 @@
 	.dance()
 	{
 		animation-name: dance;
-		animation-delay: calc(-1s * var(--rnd));
+		animation-delay: calc(-1000s * var(--rnd));
 		animation-duration: 0.3s;
 		animation-iteration-count: infinite;
 		animation-timing-function: ease-in-out;
@@ -96,7 +96,7 @@
 	{
 		animation-name: boomwiggle;
 		// animation-delay: 0s;
-		animation-delay: calc(-1s * var(--rnd));
+		animation-delay: calc(-1000s * var(--rnd));
 		animation-duration: 0.3s;
 		animation-iteration-count: infinite;
 		animation-timing-function: ease-in;
@@ -218,42 +218,50 @@
 			&.neighbor-1:before
 			{
 				content: "1";
-				color: blue;
+				// color: blue;
+				color: #0001f7;
 			}
 			&.neighbor-2:before
 			{
 				content: "2";
-				color: green;
+				// color: green;
+				color: #007f03;
 			}
 			&.neighbor-3:before
 			{
 				content: "3";
-				color: red;
+				// color: red;
+				color: #fd0000;
 			}
 			&.neighbor-4:before
 			{
 				content: "4";
-				color: purple;
+				// color: purple;
+				color: #01017e;
 			}
 			&.neighbor-5:before
 			{
 				content: "5";
-				color: black;
+				// color: black;
+				color: #820003;
 			}
 			&.neighbor-6:before
 			{
 				content: "6";
-				color: maroon;
+				// color: maroon;
+				color: #00807e;
 			}
 			&.neighbor-7:before
 			{
 				content: "7";
-				color: gray;
+				// color: gray;
+				color: black;
 			}
 			&.neighbor-8:before
 			{
 				content: "8";
-				color: turquoise;
+				// color: turquoise;
+				color: gray;			
 			}
 		}
 		&.shown.bomb
