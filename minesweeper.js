@@ -246,6 +246,9 @@
 		Height;
 		MoatSize;
 
+		AutoPlay;
+		AutoPlaySpeed;
+
 		MineCount;
 		FlagCount;
 
@@ -255,6 +258,8 @@
 			this.Shape = settings.shape;
 			this.Density = settings.density;
 			this.MoatSize = settings.moat;
+			this.AutoPlay = settings.autoplay;
+			this.AutoPlaySpeed = 100;//53000/94;
 
 			this.BestKey = bestKey;
 		}
@@ -266,16 +271,23 @@
 			let won=false;
 			let lost=false;
 			let queue = [];
+			let readying = {};
+			let placing = [];
 			console.log("Update()","Starting game...");
 			let root = game.Start();
 			let remaining = $("#remaining");
 			let time = $("#time");
+			let debug = $("#debug");
 			root.addClass("active");
 			root.on("click contextmenu touchend","tile", OnFirstClick);
 			await WaitForGo();
 			function OnFirstClick(e)
 			{
 				go = true;
+				if (e.ctrlKey)
+				{
+					game.AutoPlay = true;
+				}
 				e.preventDefault();
 				Reveal($(e.target));
 			}
@@ -372,12 +384,16 @@
 				}
 				e.preventDefault();
 			}
+			let lastPlaced = new Date();
+			// main loop
 			while (true)
 			{
 				await Wait(0);
+				// if game is over and entire queue has been reveal end the main loop
 				if ((won || lost) && !queue.length) break;
+				// update clock display
 				time.text(Clock((new Date()-time0)/1000));
-				// time.text(Math.floor((new Date()-time0)/1000));
+				// reveal (up to) 5 tiles in the queue
 				for (let i=0; queue.length && i<5; i++)
 				{
 					let tile = queue.pop();
@@ -386,18 +402,22 @@
 						i--;
 						continue;
 					}
-					tile.removeClass("hidden").addClass("shown");
-					if (tile.is(".bomb")) 
-					{
-						lost = true;
-						break;
-					}
-					let neighbors = game.Neighbors(tile);
-					let flags = neighbors.filter(".flag").length;
-					if (!tile.is(`.neighbor-${flags}`)) continue;
-					neighbors.filter(".hidden:not(.flag)").each((i,e) => queue.splice(0,0,$(e)));
+					Reveal(tile);
 				}
+				// autoplay placement of flags
+				if (placing.length && (new Date()-lastPlaced)>game.AutoPlaySpeed)
+				{
+					let tile = placing.pop();
+					if (!tile.is(".flag"))
+					{
+						Flag(tile);
+						lastPlaced = new Date();
+					}
+				}
+				// check for game over conditions
 				CheckWin();
+				// update debug display
+				debug.html(`queue: ${queue.length}<br>placing: ${placing.length}`);
 			}
 			let time1 = new Date();
 			root.off("click contextmenu", "tile", OnClick);
@@ -411,7 +431,7 @@
 			root.on("click contextmenu touchend", OnLastClick);
 			await WaitForGo();
 			root.off("click contextmenu touchend", OnLastClick);
-			if (won)
+			if (won && !game.AutoPlay)
 			{
 				let bestKey = this.BestKey;
 				let duration = Math.floor((time1-time0)/1000);
@@ -420,7 +440,6 @@
 				{
 					localStorage[bestKey] = JSON.stringify(duration);
 					$("#best #time").text(Clock(duration));
-					// $("#best #time").text(`${Math.round(10*duration)/10} s`);
 					$("#best #settings").text(GetBestDescription());
 					$("#best").removeClass("hidden");
 					$("#best button").on("click", OnGreat);
@@ -453,12 +472,28 @@
 					let neighbors = game.Neighbors(tile);
 					let flags = neighbors.filter(".flag").length;
 					if (!tile.is(`.neighbor-${flags}`)) return;
-					neighbors.filter(".hidden:not(.flag)").each((i,e) => queue.push($(e)));
+					// neighbors.filter(".hidden:not(.flag)").each((i,e) => queue.push($(e)));
+					neighbors.filter(".hidden:not(.flag)").each((i,e) => queue.splice(0,0,$(e)));
 				}
 				else
 				{
 					game.Neighbors(tile).filter(".shown").each((i,e) => ConsiderNeighbors($(e)));
 				}
+			}
+
+			function ReadyNeighbors(tile)
+			{
+				let shown = game.Neighbors(tile).filter(".shown");
+				function ReadyOrNot(tile)
+				{
+					let left = game.Neighbors(tile).filter(".hidden");
+					if (tile.is(`.neighbor-${left.length}`))
+					{
+						readying[tile.attr("id")] = true;
+						left.filter(":not(.flag)").each((i,e) => placing.push($(e)));
+					}
+				}
+				shown.filter((i,e) => !readying[$(e).attr("id")]).each((i,e) => ReadyOrNot($(e)));
 			}
 
 			function Reveal(tile)
@@ -474,6 +509,10 @@
 					else
 					{
 						ConsiderNeighbors(tile);
+					}
+					if (game.AutoPlay)
+					{
+						ReadyNeighbors(tile);
 					}
 				}
 				else
@@ -586,6 +625,7 @@
 			let remaining = status.make("div#remaining").text("—");
 			let forfeit = status.make("button#forfeit").text("Forfeit!").attr("title",`Seed: ${random.seed}`);
 			let time = status.make("div#time").text("—");
+			let debug = status.make("div#debug");
 
 			root[0].style.setProperty("--dim", dim+"px");
 
